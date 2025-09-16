@@ -46,7 +46,7 @@ class AgentsCrew:
         )
 
     @agent
-    def agent(self) -> Agent:
+    def agent(self) -> "Agent":
         return Agent(
             role=AGENT_ROLE,
             goal=AGENT_GOAL,
@@ -59,8 +59,7 @@ class AgentsCrew:
         )
 
     @crew
-    def crew(self) -> Crew:
-        """Creates the Emergency Services Crew"""
+    def crew(self) -> "Crew":
         return Crew(
             agents=self.agents,
             # Process of agent is defined as sequential
