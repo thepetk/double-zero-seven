@@ -1,0 +1,28 @@
+research_topic:
+  description: >
+    Research the provided topic using general knowledge. Identify key concepts,
+    trade-offs, and any notable comparisons or alternatives.
+  expected_output: >
+    A concise bullet list of the top findings (5–10 bullets), including brief
+    explanations for each item.
+
+write_draft:
+  description: >
+    Using the research, write a coherent draft that explains the topic to an
+    informed reader. Organize with logical sections and smooth transitions.
+  expected_output: >
+    A 3–6 paragraph draft in Markdown with headings and short paragraphs.
+
+review_draft:
+  description: >
+    Review the draft for factual accuracy, clarity, organization, and style.
+    Suggest concrete improvements and provide a revised version when needed.
+  expected_output: >
+    A short list of issues found (bullets) followed by an improved draft in Markdown.
+
+finalize_output:
+  description: >
+    Integrate reviewer feedback and deliver the final version in the requested
+    tone and format. Ensure it is polished and ready to publish.
+  expected_output: >
+    A clean, final Markdown document with headings, tightened phrasing, and a brief summary.

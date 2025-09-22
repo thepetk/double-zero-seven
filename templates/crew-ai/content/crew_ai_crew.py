@@ -4,6 +4,7 @@ import os
 
 import streamlit as st
 from crewai import Agent, Task, Crew, Process, LLM
+from crewai.project import CrewBase, agent, crew, task
 
 # LLM_API_KEY: Is the api key for the llm service
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
@@ -13,9 +14,6 @@ LLM_BASE_URL = os.getenv("LLM_BASE_URL", "")
 
 # LLM_MODEL_NAME: Is the base url of the llm service
 LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "")
-
-from crewai import Agent, Crew, Process, Task
-from crewai.project import CrewBase, agent, crew, task
 
 
 class ListHandler(logging.Handler):
