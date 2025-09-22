@@ -30,11 +30,11 @@ spec:
             - configMapRef:
                 name: ${{ values.name }}-model-config
           env:
-            - name: AGENT_API_KEY
+            - name: LLM_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: ${{  values.crewAIAPIKeySecretName  }}
-                  key: ${{  values.crewAIAPIKeySecretKey  }}
+                  name: ${{  values.crewAILLMAPIKeySecretName  }}
+                  key: ${{  values.crewAILLMAPIKeySecretKey  }}
           ports:
             - containerPort: ${{ values.appPort }}
           securityContext:

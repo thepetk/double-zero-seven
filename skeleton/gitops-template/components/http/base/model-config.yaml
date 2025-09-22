@@ -3,9 +3,5 @@ kind: ConfigMap
 metadata:
   name: ${{ values.name }}-model-config
 data:
-  AGENT_ROLE: "${{ values.crewAIRole }}"
-  AGENT_GOAL: "${{ values.llamaStackServiceUrl }}"
-  AGENT_BACKSTORY: "${{ values.crewAIBackstory }}"
-  AGENT_BASE_URL: "${{ values.crewAIBaseUrl }}"
-  AGENT_MODEL_NAME: "${{ values.crewAIModelName }}"
-  AGENT_VERBOSE: "${{ values.crewAIVerbose }}"
+  LLM_BASE_URL: "${{ values.crewAILLMBaseUrl }}"
+  LLM_MODEL_NAME: "${{ values.crewAILLMModelName }}"
