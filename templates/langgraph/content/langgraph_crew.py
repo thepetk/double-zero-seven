@@ -167,8 +167,8 @@ def run_team(graph: "StateGraph", inputs: "dict[str, str]") -> "tuple[str, list[
         lg.addHandler(handler)
 
     try:
-        init: "TeamState" = {"topic": inputs.get("topic", ""), "logs": logs}
-        out: "TeamState" = graph.invoke(init)
+        init: "dict[str, str]" = {"topic": inputs.get("topic", ""), "logs": logs}
+        out: "Any" = graph.invoke(init)
         return str(out.get("result", "")), logs
     finally:
         for lg in targets:
