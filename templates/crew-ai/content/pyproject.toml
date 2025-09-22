@@ -1,19 +1,11 @@
 [project]
 name = "crew-ai-agent-template"
 version = "0.1.0"
-description = "A container-ready CrewAI agent that reads config from environment variables."
+description = "A container-ready config-based CrewAI crew."
 authors = [{ name = "Theofanis Petkos", email = "thepetk@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = [
-    "crewai>=0.30.0",
-    "openai>=1.40.0",
-    "requests>=2.32.0",
-    "pyyaml>=6.0.1",
-]
-
-[project.scripts]
-agents-crew = "agents_crew:main"
+dependencies = ["crewai>=0.30.0", "streamlit>=1.38.0"]
 
 [build-system]
 requires = ["setuptools>=61.0"]

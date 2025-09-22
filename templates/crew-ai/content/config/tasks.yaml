@@ -1,0 +1,4 @@
+summarize_topic:
+  description: "Summarize {{topic}} in 3-5 bullet points."
+  expected_output: "3-5 concise bullet points."
+  agent: researcher
