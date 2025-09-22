@@ -1,6 +1,6 @@
-# AI Software Template
+# Agentic AI Framework Template
 
-This AI Software Template can be used to create a new source code repository and a new GitOps deployment repository for a sed.edit.APP_DISPLAY_NAME.
+This Agentic AI Framework Template can be used to create a new source code repository and a new GitOps deployment repository for a sed.edit.APP_DISPLAY_NAME.
 
 As a user you will be able to customize each section of the template, such as:
 
@@ -10,11 +10,19 @@ As a user you will be able to customize each section of the template, such as:
 
 - Owner
 
-- Llama Stack model endpoint
+### **Application Agent Information**
+
+- Agent LLM Service URL
+
+- Agent LLM Service Model Name
+
+- Agent LLM Service API Key Secret Name
+
+- Agent LLM Service API Key Secret Key
 
 ### **Repository Information**
 
-- GitHub/GitLab repository
+- GitHub repository
 
 - Repository owner
 
@@ -26,4 +34,4 @@ As a user you will be able to customize each section of the template, such as:
 
 - Image registry and image name
 
-For more information, see the Template [source code repository](https://github.com/thepetk/llama-stack-template).
+For more information, see the Template [source code repository](https://github.com/thepetk/double-zero-seven).
