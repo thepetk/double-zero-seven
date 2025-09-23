@@ -11,12 +11,7 @@ spec:
     repoURL: ${{ values.repoURL }}.git
     targetRevision: main
   destination:
-  {%- if values.deployOnRemoteCluster %}
-    server: ${{ values.remoteClusterAPIUri }}
-  {%- else %}
     server: https://kubernetes.default.svc
-  {%- endif %}
-    namespace: ${{ values.namespace }}
   syncPolicy:
     managedNamespaceMetadata:
       labels:
