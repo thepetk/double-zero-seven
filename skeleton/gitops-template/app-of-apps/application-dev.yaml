@@ -12,6 +12,7 @@ spec:
     targetRevision: main
   destination:
     server: https://kubernetes.default.svc
+    namespace: ${{ values.namespace }}
   syncPolicy:
     managedNamespaceMetadata:
       labels:
