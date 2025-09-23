@@ -72,7 +72,6 @@ spec:
           type: string
           enum:
             - GitHub
-            - GitLab
           default: GitHub
         repoOwner:
           title: Repository Owner
@@ -147,8 +146,8 @@ spec:
           name: ${{ parameters.name }}
           appSummary: A template for deploying a configurable CrewAI agent with an OpenAI-compatible backend.
           namespace: ${{ parameters.namespace }}
-          repoURL: https://${{ parameters.githubServer if parameters.hostType === 'GitHub' else parameters.gitlabServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}-gitops
-          srcRepoURL: https://${{ parameters.githubServer if parameters.hostType === 'GitHub' else parameters.gitlabServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}
+          repoURL: https://${{ parameters.githubServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}-gitops
+          srcRepoURL: https://${{ parameters.githubServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}
           appContainer: ${{ 'quay.io/redhat-ai-dev/ai-template-bootstrap-app:latest' if parameters.hostType === 'GitHub' else 'quay.io/redhat-ai-dev/chatbot:latest' }}
           appPort: 8501
           appRunCommand: "python crew_ai_crew.py"
@@ -165,7 +164,7 @@ spec:
           description: Secure Supply Chain Example for Chatbot Application
           dockerfile: Containerfile
           buildContext: .
-          gitopsSecretName: ${{ 'gitops-auth-secret' if parameters.hostType === 'GitHub' else 'gitlab-auth-secret' }}
+          gitopsSecretName: ${{ 'gitops-auth-secret' }}
           image: "${{ parameters.imageRegistry }}/${{ parameters.imageOrg }}/${{ parameters.imageName }}"
           tags: '["ai", "llamacpp", "vllm", "python"]'
           owner: ${{ parameters.owner }}
@@ -206,8 +205,8 @@ spec:
           description: This is GitOps manifest for ${{ parameters.name }}
           namespace: ${{ parameters.namespace }}
           rhdhNamespace: rolling-demo-ns
-          repoURL: https://${{ parameters.githubServer if parameters.hostType === 'GitHub' else parameters.gitlabServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}-gitops
-          srcRepoURL: https://${{ parameters.githubServer if parameters.hostType === 'GitHub' else parameters.gitlabServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}
+          repoURL: https://${{ parameters.githubServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}-gitops
+          srcRepoURL: https://${{ parameters.githubServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}
           argoComponentOverlays: "./components/${{ parameters.name }}/overlays"
           owner: ${{ parameters.owner }}
           argoNS: openshift-gitops
@@ -244,19 +243,6 @@ spec:
         defaultBranch: "main"
         protectDefaultBranch: false
         repoVisibility: "public"
-    # This action creates a new GitLab repository and publishes the files in the workspace directory to the repository.
-    - id: publish-gitlab-gitops
-      name: Publish GitOps Repository to GitLab
-      action: publish:gitlab
-      if: ${{ parameters.hostType === 'GitLab' }}
-      input:
-        sourcePath: gitops
-        allowedHosts: ["${{ parameters.gitlabServer }}"]
-        description: This is GitOps repository for ${{ parameters.name }}
-        repoUrl: ${{ parameters.gitlabServer }}?owner=${{ parameters.repoOwner }}&repo=${{ parameters.repoName }}-gitops
-        defaultBranch: "main"
-        protectDefaultBranch: false
-        repoVisibility: "public"
     - id: wait-for-github-repository
       name: Waiting for Repository Availability
       action: "debug:wait"
@@ -267,14 +253,14 @@ spec:
       name: Register
       action: catalog:register
       input:
-        repoContentsUrl: ${{ steps['publish-github'].output.repoContentsUrl if steps['publish-github'].output else steps['publish-gitlab'].output.repoContentsUrl }}
+        repoContentsUrl: ${{ steps['publish-github'].output.repoContentsUrl }}
         catalogInfoPath: "/catalog-info.yaml"
     # SED_APP_SUPPORT_END
     - id: register-gitops
       name: Register Gitops
       action: catalog:register
       input:
-        repoContentsUrl: ${{ steps['publish-github-gitops'].output.repoContentsUrl if steps['publish-github-gitops'].output else steps['publish-gitlab-gitops'].output.repoContentsUrl }}
+        repoContentsUrl: ${{ steps['publish-github-gitops'].output.repoContentsUrl }}
         catalogInfoPath: "/catalog-info.yaml"
     - id: create-argocd-resources
       name: Create ArgoCD Resources
@@ -285,7 +271,7 @@ spec:
         argoInstance: default
         labelValue: rolling-demo
         namespace: openshift-gitops
-        repoUrl: https://${{ parameters.githubServer if parameters.hostType === 'GitHub' else parameters.gitlabServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}-gitops.git
+        repoUrl: https://${{ parameters.githubServer }}/${{ parameters.repoOwner }}/${{ parameters.repoName }}-gitops.git
         path: "./app-of-apps"
     # SED_APP_SUPPORT_START
     # PR with empty commit
@@ -319,10 +305,10 @@ spec:
     links:
       # SED_APP_SUPPORT_START
       - title: Source Repository
-        url: ${{ steps['publish-github'].output.remoteUrl if steps['publish-github'].output else steps['publish-gitlab'].output.remoteUrl }}
+        url: ${{ steps['publish-github'].output.remoteUrl }}
       # SED_APP_SUPPORT_END
       - title: GitOps Repository
-        url: ${{ steps['publish-github-gitops'].output.remoteUrl if steps['publish-github-gitops'].output else steps['publish-gitlab-gitops'].output.remoteUrl }}
+        url: ${{ steps['publish-github-gitops'].output.remoteUrl }}
       # SED_APP_SUPPORT_START
       - title: Open Component in Catalog
         icon: catalog
