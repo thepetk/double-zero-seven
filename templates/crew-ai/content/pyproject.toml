@@ -5,7 +5,11 @@ description = "A container-ready config-based CrewAI crew."
 authors = [{ name = "Theofanis Petkos", email = "thepetk@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["crewai>=0.30.0", "streamlit>=1.38.0"]
+dependencies = [
+    "crewai>=0.30.0",
+    "streamlit>=1.38.0",
+    "pysqlite3-binary>=0.5.2.post3",
+]
 
 [build-system]
 requires = ["setuptools>=61.0"]
