@@ -183,7 +183,7 @@ spec:
       if: ${{ parameters.hostType === 'GitHub' }}
       input:
         sourcePath: source
-        allowedHosts: ["${{ parameters.githubServer}}"]
+        # allowedHosts: ["${{ parameters.githubServer}}"]
         description: This is ${{ parameters.name }}
         repoUrl: ${{ parameters.githubServer }}?owner=${{ parameters.repoOwner }}&repo=${{ parameters.repoName }}
         defaultBranch: ${{ parameters.branch }}
