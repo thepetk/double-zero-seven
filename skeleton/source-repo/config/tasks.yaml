@@ -1,13 +1,7 @@
 {% for t in values.tasks %}
-{{ t.name }}:
+${{ t.name }}:
   description: |-
-    {{ t.description }}
-  expected_output: "{{ t.expected_output | default("Best possible answer.") }}"
-  agent: "{{ t.agent }}"
-  {% if t.inputs %}
-  inputs:
-  {% for k, v in t.inputs.items() %}
-    {{ k }}: {{ v | dump }}
-  {% endfor %}
-  {% endif %}
+    ${{ t.description }}
+  expected_output: "${{ t.expected_output | default("Best possible answer.") }}"
+  agent: "${{ t.agent }}"
 {% endfor %}

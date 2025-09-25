@@ -1,5 +1,5 @@
 {% for a in values.agents %}
-{{ a.name }}:
+${{ a.name }}:
   role: "${{ a.role }}"
   goal: "${{ a.goal }}"
   {% if a.backstory %}
