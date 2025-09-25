@@ -82,6 +82,42 @@ spec:
               backstory:
                 type: string
                 title: Agent Backstory
+              tools:
+                type: array
+                title: Agent Tools
+                description: "Add one or more tools assign to this agent."
+                items:
+                  type: string
+              includeOtherLLM:
+                title: Uses different LLM?
+                type: boolean
+                default: false
+                ui:help: Create a Secret containing the llm api key in the preferred targeted Namespace first.
+            dependencies:
+              includeOtherLLM:
+                allOf:
+                  - if:
+                      properties:
+                        includeOtherLLM:
+                          const: true
+                    then:
+                      properties:
+                        llmAPIURL:
+                          type: string
+                          title: LLM API URL
+                          ui:help: "The url of the LLM API."
+                        llmAPIKeySecretName:
+                          type: string
+                          title: LLM API Key Secret Name
+                          ui:help: "The Name of the secret that the LLM API Key is inside."
+                        llmAPIKeySecretKey:
+                          type: string
+                          title: LLM API Key Secret Key
+                          ui:help: "The Key of the secret that the LLM API Key value is inside."
+                        llmAPIKeyEnvVarName:
+                          type: string
+                          title: LLM API Key Env Var Name
+                          ui:help: "The name of the LLM API Key env var."
         tasks:
           type: array
           title: Tasks
@@ -104,6 +140,49 @@ spec:
                 type: string
                 title: Agent Name
                 ui:help: "Must match agents[i].name"
+        tools:
+          type: array
+          description: "Add one or more MCP tools assign to the agent(s)."
+          items:
+            type: object
+            required: [url, transport]
+            properties:
+              url:
+                type: string
+                title: MCP endpoint URL
+                ui:help: "e.g. https://tools.example.com/mcp or http://localhost:8001/mcp"
+              transport:
+                type: string
+                title: Type of MCP Transport Protocol
+                enum: ["streamable-http", "sse"]
+                default: "streamable-http"
+              includeTransportSecret:
+                title: Is bearer authentication required?
+                type: boolean
+                default: false
+                ui:help: Create a Secret containing the authentication bearer in the preferred targeted Namespace first.
+            dependencies:
+              includeTransportSecret:
+                allOf:
+                  - if:
+                      properties:
+                        includeTransportSecret:
+                          const: true
+                    then:
+                      properties:
+                        bearerTokenSecretName:
+                          type: string
+                          title: Authentication Bearer Token Secret Name
+                          ui:help: "The Name of the secret that the Bearer Token is inside."
+                        bearerTokenSecretKey:
+                          type: string
+                          title: Authentication Bearer Token Secret Key
+                          ui:help: "The Key of the secret that the Bearer Token value is inside."
+                        bearerTokenEnvVarName:
+                          type: string
+                          title: Bearer Token Env Var Name
+                          ui:help: "The name of the bearer token env var."
+
     - title: Application Repository Information
       required:
         - hostType
@@ -216,6 +295,7 @@ spec:
           defaultBranch: ${{ parameters.branch }}
           agents: ${{ parameters.agents }}
           tasks: ${{ parameters.tasks }}
+          mcpServers: ${{ parameters.tools }}
     - id: fetch-github-action
       name: Fetch GitHub Action
       action: fetch:plain
@@ -266,6 +346,8 @@ spec:
           crewAILLMAPIKeySecretName: ${{ parameters.crewAILLMAPIKeySecretName }}
           crewAILLMAPIKeySecretKey: ${{ parameters.crewAILLMAPIKeySecretKey }}
           crewAILLMModelName: ${{ parameters.crewAILLMModelName }}
+          agents: ${{ parameters.agents }}
+          tools: ${{ parameters.tools }}
           imageRegistry: ${{ parameters.imageRegistry }}
           imageOrg: ${{ parameters.imageOrg }}
           imageName: ${{ parameters.imageName }}
