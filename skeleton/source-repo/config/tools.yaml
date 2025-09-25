@@ -1,0 +1,10 @@
+tools:
+{% if values.tools and values.tools.length > 0 -%}
+{% for t in values.tools -%}
+  - url: "${{ t.url }}"
+    transport: "${{ t.transport }}"
+    {% if t.bearerTokenEnvVarName %}bearerTokenEnvVarName: ${{ t.bearerTokenEnvVarName | dump }}{% endif %}
+{% endfor -%}
+{% else -%}
+  []
+{% endif -%}
