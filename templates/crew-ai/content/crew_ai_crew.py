@@ -8,8 +8,10 @@ import logging
 import os
 
 import streamlit as st
+from pathlib import Path
+import yaml
 from crewai import Agent, Task, Crew, Process, LLM
-from crewai.project import CrewBase, agent, crew, task
+from crewai.project import CrewBase, crew
 
 # LLM_API_KEY: Is the api key for the llm service
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
@@ -19,6 +21,11 @@ LLM_BASE_URL = os.getenv("LLM_BASE_URL", "")
 
 # LLM_MODEL_NAME: Is the base url of the llm service
 LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "")
+
+
+class ConfigPath:
+    AGENTS = Path(__file__).parent / "config" / "agents.yaml"
+    TASKS = Path(__file__).parent / "config" / "tasks.yaml"
 
 
 class ListHandler(logging.Handler):
@@ -41,42 +48,66 @@ class ListHandler(logging.Handler):
 class ResearchCrew:
     """A simple research crew Services Crew"""
 
-    agents_config = "config/agents.yaml"
-    tasks_config = "config/tasks.yaml"
+    def __init__(self) -> "None":
+        super().__init__()
+        with ConfigPath.AGENTS.open("r", encoding="utf-8") as f:
+            self.agents_config: "dict[str, dict[str, str]]" = yaml.safe_load(f) or {}
+        with ConfigPath.TASKS.open("r", encoding="utf-8") as f:
+            self.tasks_config: "dict[str, dict[str, str]]" = yaml.safe_load(f) or {}
+
+        self._agents_dict: "dict[str, Agent]" = {}
 
     def get_llm_client(self) -> "LLM":
         return LLM(
             base_url=LLM_BASE_URL, api_key=LLM_API_KEY, model=f"openai/{LLM_MODEL_NAME}"
         )
 
-    @agent
-    def researcher(self) -> "Agent":
-        return Agent(
-            config=self.agents_config["researcher"],
-            verbose=True,
-            llm=self.get_llm_client(),
-            tools=[],
-        )
+    def _build_agents(self) -> "list[Agent]":
+        """
+        builds a list of agents based on the configuration
+        """
+        llm = self.get_llm_client()
+        agents: "list[Agent]" = []
+        self._agents_dict: "dict[str, Agent]" = {}
 
-    @task
-    def summarize_topic(self) -> "Task":
-        return Task(
-            config=self.tasks_config["summarize_topic"],
-        )
+        for name, cfg in self.agents_config.items():
+            agent_kwargs = dict(config=cfg, llm=llm, tools=[])
+            agent = Agent(**agent_kwargs)
+            agents.append(agent)
+            self._agents_dict[name] = agent
+
+        return agents
+
+    def _build_tasks(self) -> "list[Task]":
+        tasks: "list[Task]" = []
+
+        for name, cfg in self.tasks_config.items():
+            agent_name = cfg.get("agent")
+            if not agent_name or agent_name not in self._agents_dict:
+                raise ValueError(
+                    f"Task '{name}' references unknown agent '{agent_name}'"
+                )
+
+            task = Task(config=cfg, agent=self._agents_dict[agent_name])
+            setattr(task, "_default_inputs", cfg.get("inputs", {}) or {})
+            tasks.append(task)
+        return tasks
 
     @crew
-    def crew(self) -> Crew:
+    def crew(self) -> "Crew":
         """Creates the Research Crew"""
+        agents = self._build_agents()
+        tasks = self._build_tasks()
         return Crew(
-            agents=self.agents,
-            tasks=self.tasks,
+            agents=agents,
+            tasks=tasks,
             process=Process.sequential,
             verbose=True,
         )
 
 
 def run_crew(crew: "Crew", inputs: "dict[str, str]") -> "tuple[str, list[str]]":
-    logs: list[str] = []
+    logs: "list[str]" = []
     handler = ListHandler(logs)
     handler.setFormatter(
         logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s")
