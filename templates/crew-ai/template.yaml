@@ -104,10 +104,6 @@ spec:
                 type: string
                 title: Agent Name
                 ui:help: "Must match agents[i].name"
-              inputs:
-                type: object
-                additionalProperties: true
-                title: "Task Inputs"
     - title: Application Repository Information
       required:
         - hostType

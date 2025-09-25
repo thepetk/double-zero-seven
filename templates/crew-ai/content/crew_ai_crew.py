@@ -89,7 +89,6 @@ class ResearchCrew:
                 )
 
             task = Task(config=cfg, agent=self._agents_dict[agent_name])
-            setattr(task, "_default_inputs", cfg.get("inputs", {}) or {})
             tasks.append(task)
         return tasks
 
