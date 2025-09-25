@@ -80,32 +80,32 @@ spec:
               backstory:
                 type: string
                 title: Agent Backstory
-          tasks:
-            type: array
-            title: Tasks
-            description: "Bind each task to an agent by its name"
-            items:
-              type: object
-              required: [name, description, agent]
-              properties:
-                name:
-                  type: string
-                  title: Task Name
-                description:
-                  type: string
-                  title: Task Description
-                expected_output:
-                  type: string
-                  default: "Best possible answer."
-                  title: Expected Output
-                agent:
-                  type: string
-                  title: Agent Name
-                  ui:help: "Must match agents[i].name"
-                inputs:
-                  type: object
-                  additionalProperties: true
-                  title: "Task Inputs"
+        tasks:
+          type: array
+          title: Tasks
+          description: "Bind each task to an agent by its name"
+          items:
+            type: object
+            required: [name, description, agent]
+            properties:
+              name:
+                type: string
+                title: Task Name
+              description:
+                type: string
+                title: Task Description
+              expected_output:
+                type: string
+                default: "Best possible answer."
+                title: Expected Output
+              agent:
+                type: string
+                title: Agent Name
+                ui:help: "Must match agents[i].name"
+              inputs:
+                type: object
+                additionalProperties: true
+                title: "Task Inputs"
     - title: Application Repository Information
       required:
         - hostType
