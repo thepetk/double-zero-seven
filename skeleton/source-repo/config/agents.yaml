@@ -1,0 +1,10 @@
+{% for a in values.agents %}
+{{ a.name }}:
+  role: "${{ a.role }}"
+  goal: "${{ a.goal }}"
+  {% if a.backstory %}
+  backstory: "${{ a.backstory | replace("\n", " ") }}"
+  {% endif %}
+  model: "${{ a.model }}"
+  verbose: ${{ a.verbose | default(true) }}
+{% endfor %}
