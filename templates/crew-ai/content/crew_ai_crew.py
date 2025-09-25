@@ -12,6 +12,8 @@ from pathlib import Path
 import yaml
 from crewai import Agent, Task, Crew, Process, LLM
 from crewai.project import CrewBase, crew
+from crewai.tools import BaseTool
+from crewai_tools import MCPServerAdapter
 
 # LLM_API_KEY: Is the api key for the llm service
 LLM_API_KEY = os.getenv("LLM_API_KEY", "")
@@ -26,6 +28,7 @@ LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "")
 class ConfigPath:
     AGENTS = Path(__file__).parent / "config" / "agents.yaml"
     TASKS = Path(__file__).parent / "config" / "tasks.yaml"
+    TOOLS = Path(__file__).parent / "config" / "tools.yaml"
 
 
 class ListHandler(logging.Handler):
@@ -54,24 +57,72 @@ class ResearchCrew:
             self.agents_config: "dict[str, dict[str, str]]" = yaml.safe_load(f) or {}
         with ConfigPath.TASKS.open("r", encoding="utf-8") as f:
             self.tasks_config: "dict[str, dict[str, str]]" = yaml.safe_load(f) or {}
+        with ConfigPath.TOOLS.open("r", encoding="utf-8") as f:
+            self.tools_config: "dict[str, list[dict[str, str]]]" = (
+                yaml.safe_load(f) or {}
+            )
 
         self._agents_dict: "dict[str, Agent]" = {}
+        self._tools_dict: "dict[str, BaseTool]" = {}
 
-    def get_llm_client(self) -> "LLM":
-        return LLM(
-            base_url=LLM_BASE_URL, api_key=LLM_API_KEY, model=f"openai/{LLM_MODEL_NAME}"
-        )
+    def get_llm_client(
+        self, base_url=LLM_BASE_URL, api_key=LLM_API_KEY, model=LLM_MODEL_NAME
+    ) -> "LLM":
+        return LLM(base_url=base_url, api_key=api_key, model=model)
+
+    def _build_tools(self, timeout=10) -> "dict[str, BaseTool]":
+        server_params_list: "list[dict[str, str]]" = []
+        self._tools_dict: "dict[str, BaseTool]" = {}
+        for tc in self.tools_config["tools"]:
+            transport = tc.get("transport")
+            url = tc.get("url")
+            params: "dict[str, str]" = {"url": url, "transport": transport}
+
+            # check if authorization header should be added
+            if tc.get("bearerTokenEnvVarName"):
+                bearer = os.getenv(tc["bearerTokenEnvVarName"])
+                if bearer:
+                    params.setdefault("headers", {})[
+                        "Authorization"
+                    ] = f"Bearer {bearer}"
+
+            server_params_list.append(params)
+
+        tools_by_name: "dict[str, BaseTool]" = {}
+
+        with MCPServerAdapter(server_params_list, connect_timeout=timeout) as mcp_tools:
+            for tool in mcp_tools:
+                tools_by_name[tool.name] = tool
+
+        return tools_by_name
 
     def _build_agents(self) -> "list[Agent]":
         """
         builds a list of agents based on the configuration
         """
-        llm = self.get_llm_client()
+        default_llm = self.get_llm_client()
         agents: "list[Agent]" = []
         self._agents_dict: "dict[str, Agent]" = {}
+        self._tools_dict = self._build_tools()
 
         for name, cfg in self.agents_config.items():
-            agent_kwargs = dict(config=cfg, llm=llm, tools=[])
+            agent_tool_names = cfg.get("tools") or []
+            agent_tools = [
+                self._tools_dict[name]
+                for name in agent_tool_names
+                if name in self._tools_dict
+            ]
+            # check if custom llm is used
+            llm = (
+                default_llm
+                if not cfg.get("llmAPIURL")
+                else self.get_llm_client(
+                    cfg.get("llmAPIURL"),
+                    os.getenv(cfg.get("llmAPIKeyEnvVar")),
+                    cfg.get("model"),
+                )
+            )
+            agent_kwargs = dict(config=cfg, llm=llm, tools=agent_tools)
             agent = Agent(**agent_kwargs)
             agents.append(agent)
             self._agents_dict[name] = agent
