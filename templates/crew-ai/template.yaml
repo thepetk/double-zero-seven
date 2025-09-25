@@ -68,7 +68,7 @@ spec:
           ui:help: "Add one or more agents"
           items:
             type: object
-            required: [name, role, goal, model]
+            required: [name, role, goal]
             properties:
               name:
                 type: string
