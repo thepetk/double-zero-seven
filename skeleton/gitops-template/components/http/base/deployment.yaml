@@ -45,6 +45,7 @@ spec:
                   key: ${{ a.llmAPIKeySecretKey }}
             {% endif -%}
             {% endfor -%}
+            {% endif -%}
             {% if values.tools and values.tools.length > 0 -%}
             {% for t in values.tools %}
             - name: ${{ t.bearerTokenEnvVarName }}:
