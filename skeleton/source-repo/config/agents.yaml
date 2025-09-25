@@ -6,5 +6,13 @@ ${{ a.name }}:
   backstory: "${{ a.backstory | replace("\n", " ") }}"
   {% endif %}
   model: "${{ a.model }}"
+  llmAPIURL: "${{ a.llmAPIURL }}"
+  llmAPIKeyEnvVar: "${{ a.llmAPIKeyEnvVarName }}"
   verbose: ${{ a.verbose | default(true) }}
+  {% if a.tools and a.tools.length > 0 -%}
+  tools:
+    {% for t in a.tools -%}
+    - "${{ t }}"
+    {% endfor -%}
+  {% endif -%}
 {% endfor %}
