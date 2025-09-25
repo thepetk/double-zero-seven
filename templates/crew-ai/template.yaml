@@ -43,6 +43,8 @@ spec:
         - crewAILLMAPIKeySecretName
         - crewAILLMAPIKeySecretKey
         - crewAILLMModelName
+        - agents
+        - tasks
       properties:
         crewAILLMBaseUrl:
           title: Agent LLM Service URL
