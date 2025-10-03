@@ -1,15 +1,31 @@
-# Software Template — CrewAI Agent
+# Software Template — CrewAI Crew
 
-This Software Template can be used to create a new source code repository and a new GitOps deployment repository for a **CrewAI Agent Application**.
+This Software Template can be used to create a new source code repository and a new GitOps deployment repository for a **CrewAI Crew Application**.
 
-This application uses the [CrewAI framework](https://docs.crewai.com) to define, configure, and orchestrate agents. Configuration is controlled entirely via environment variables, which makes it container-friendly and easy to run on Kubernetes or OpenShift.
+This application uses the [CrewAI framework](https://docs.crewai.com) to define, configure, and orchestrate multiple agents working together. Configuration is controlled via YAML files and environment variables, making it container-friendly and easy to run on Kubernetes or OpenShift.
 
-### **Application Information**
+### **Tools Configuration**
 
-- Application name
-- LLM API Key Secret Name & Field
-- LLM Base URL
-- LLM Model Name
+- MCP (Model Context Protocol) tool servers
+- Tool name, URL, and transport protocol (streamable-http or sse)
+- Optional bearer token authentication
+
+### **Default LLM Configuration**
+
+- Default LLM API Key Secret Name & Field
+- Default LLM Base URL
+- Default LLM Model Name
+
+### **Agents Configuration**
+
+- Multiple agents with roles, goals, and backstories
+- Assign MCP tools to agents
+- Optional per-agent custom LLM configuration (overrides default)
+
+### **Tasks Configuration**
+
+- Multiple tasks assigned to agents
+- Task descriptions and expected outputs
 
 ### **Repository Information**
 
