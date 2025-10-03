@@ -142,11 +142,16 @@ spec:
                 ui:help: "Must match agents[i].name"
         tools:
           type: array
+          title: Tools
           description: "Add one or more MCP tools assign to the agent(s)."
           items:
             type: object
-            required: [url, transport]
+            required: [name, url, transport]
             properties:
+              name:
+                type: string
+                title: Tool Name
+                ui:help: "A unique name for this MCP tool server (e.g. backstage_mcp_tools)"
               url:
                 type: string
                 title: MCP endpoint URL
