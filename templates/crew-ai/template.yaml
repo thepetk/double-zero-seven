@@ -141,13 +141,13 @@ spec:
                 description: "Select tools from the configured MCP tools."
                 items:
                   type: string
-                  ui:field: SelectFieldFromApi
-                  ui:options:
-                    title: Select Tool
-                    description: Choose a tool from previously configured tools
-                    path: tools
-                    arraySelector: name
-                    valueSelector: name
+                ui:field: SelectFieldFromApi
+                ui:options:
+                  title: Select Tool
+                  description: Choose a tool from previously configured tools
+                  path: tools
+                  arraySelector: name
+                  valueSelector: name
               includeOtherLLM:
                 title: Uses different LLM?
                 type: boolean
