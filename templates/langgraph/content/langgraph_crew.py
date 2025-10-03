@@ -2,7 +2,8 @@
 from dataclasses import dataclass, field
 import logging
 import os
-from typing import Any
+from pathlib import Path
+from typing import Any, Dict, List
 
 import streamlit as st
 import yaml
@@ -17,6 +18,12 @@ LLM_BASE_URL = os.getenv("LLM_BASE_URL", "")
 
 # LLM_MODEL_NAME: Is the base url of the llm service
 LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "")
+
+
+class ConfigPath:
+    AGENTS = Path(__file__).parent / "config" / "agents.yaml"
+    TASKS = Path(__file__).parent / "config" / "tasks.yaml"
+    TOOLS = Path(__file__).parent / "config" / "tools.yaml"
 
 
 class ListHandler(logging.Handler):
@@ -55,14 +62,59 @@ class TeamState:
 
 
 class ResearchTeam:
-    agents_config = "config/agents.yaml"
-    tasks_config = "config/tasks.yaml"
-
     def __init__(self) -> "None":
-        self.agents_cfg = _load_yaml(self.agents_config)
-        self.tasks_cfg = _load_yaml(self.tasks_config)
+        with ConfigPath.AGENTS.open("r", encoding="utf-8") as f:
+            self.agents_cfg: Dict[str, Dict[str, Any]] = yaml.safe_load(f) or {}
+        with ConfigPath.TASKS.open("r", encoding="utf-8") as f:
+            self.tasks_cfg: Dict[str, Dict[str, Any]] = yaml.safe_load(f) or {}
+        with ConfigPath.TOOLS.open("r", encoding="utf-8") as f:
+            self.tools_cfg: Dict[str, List[Dict[str, str]]] = yaml.safe_load(f) or {}
+
+        self._tools_dict: Dict[str, Any] = {}
+        self._tool_sources: Dict[str, List[str]] = {}
+        self._build_tools()
+
         self.client = _llm()
+        self.agent_clients: Dict[str, OpenAI] = {}
+        self._build_agent_clients()
         self.graph = self._build_graph()
+
+    def _build_tools(self, timeout=10) -> None:
+        """Build MCP tools from configuration - placeholder for now"""
+        # For now, just track tool sources without actual MCP connection
+        # This matches the structure from crew-ai but simplified for langgraph
+        for tc in self.tools_cfg.get("tools", []):
+            if not tc.get("name"):
+                continue
+            tool_name = tc.get("name")
+            self._tool_sources[tool_name] = []
+            # In a full implementation, you would connect to MCP servers here
+            # and populate self._tools_dict
+
+    def _build_agent_clients(self) -> None:
+        """Build OpenAI clients for each agent with custom LLM config"""
+        for agent_name, cfg in self.agents_cfg.items():
+            if cfg.get("llmAPIURL"):
+                # Agent has custom LLM configuration
+                api_url = cfg.get("llmAPIURL")
+                api_key_env_var = cfg.get("llmAPIKeyEnvVar")
+                api_key = os.getenv(api_key_env_var) if api_key_env_var else LLM_API_KEY
+                self.agent_clients[agent_name] = OpenAI(
+                    base_url=api_url or None,
+                    api_key=api_key or None
+                )
+            else:
+                # Use default LLM
+                self.agent_clients[agent_name] = self.client
+
+    def _get_agent_client(self, agent_name: str) -> OpenAI:
+        """Get the appropriate OpenAI client for an agent"""
+        return self.agent_clients.get(agent_name, self.client)
+
+    def _get_agent_model(self, agent_name: str) -> str:
+        """Get the model name for an agent"""
+        cfg = self.agents_cfg.get(agent_name, {})
+        return cfg.get("model", LLM_MODEL_NAME)
 
     def _prompt(
         self, role_key: "str", task_key: "str", extra_user: "str"
@@ -78,9 +130,11 @@ class ResearchTeam:
         usr = f"{desc}\n\n{extra_user}\n{('Expected output: ' + expected) if expected else ''}".strip()
         return [{"role": "system", "content": sys}, {"role": "user", "content": usr}]
 
-    def _call(self, messages: "list[dict[str, str]]", temperature=0.2) -> "str":
-        resp = self.client.chat.completions.create(
-            model=LLM_MODEL_NAME,
+    def _call(self, agent_name: str, messages: "list[dict[str, str]]", temperature=0.2) -> "str":
+        client = self._get_agent_client(agent_name)
+        model = self._get_agent_model(agent_name)
+        resp = client.chat.completions.create(
+            model=model,
             messages=messages,
             temperature=temperature,
         )
@@ -91,7 +145,7 @@ class ResearchTeam:
         topic = state.topic
         msgs = self._prompt("researcher", "research_topic", f"Topic: {topic}")
         try:
-            state.research = self._call(msgs)
+            state.research = self._call("researcher", msgs)
         except Exception as e:
             state.research = f"LLM error in researcher: {e}"
             logging.getLogger("team").exception("Researcher failed")
@@ -104,7 +158,7 @@ class ResearchTeam:
             "writer", "write_draft", f"Use this research:\n\n{research}"
         )
         try:
-            state.draft = self._call(msgs)
+            state.draft = self._call("writer", msgs)
         except Exception as e:
             state.draft = f"LLM error in writer: {e}"
             logging.getLogger("team").exception("Writer failed")
@@ -117,7 +171,7 @@ class ResearchTeam:
             "reviewer", "review_draft", f"Review and improve this draft:\n\n{draft}"
         )
         try:
-            state.review = self._call(msgs)
+            state.review = self._call("reviewer", msgs)
         except Exception as e:
             state.review = f"LLM error in reviewer: {e}"
             logging.getLogger("team").exception("Reviewer failed")
@@ -135,7 +189,7 @@ class ResearchTeam:
             f"Topic: {topic}\n\nResearch:\n{research}\n\nDraft:\n{draft}\n\nReviewer notes:\n{review}\n\nProduce the final result.",
         )
         try:
-            state.result = self._call(msgs)
+            state.result = self._call("finalizer", msgs)
         except Exception as e:
             state.result = f"LLM error in finalizer: {e}"
             logging.getLogger("team").exception("Finalizer failed")
@@ -198,13 +252,24 @@ def main() -> "None":
         )
         st.toggle("Verbose logs", value=True, disabled=True)
 
+        st.markdown("### Available Tools")
+        if team._tool_sources:
+            for source_name, tool_list in team._tool_sources.items():
+                st.markdown(f"**{source_name}**")
+                for tool_name in tool_list:
+                    st.markdown(f"  - {tool_name}")
+        else:
+            st.info("No tools connected")
+
     st.markdown("#### Team overview")
     a_col, t_col = st.columns(2)
 
     with a_col:
         st.markdown("**Agents**")
         for key, a in (team.agents_cfg or {}).items():
-            st.markdown(f"- **{a.get('role', key)}** — goal: _{a.get('goal', '')}_")
+            tool_sources = a.get("tools", [])
+            tools_info = f" (tools: {', '.join(tool_sources)})" if tool_sources else ""
+            st.markdown(f"- **{a.get('role', key)}** — goal: _{a.get('goal', '')}{tools_info}_")
 
     with t_col:
         st.markdown("**Tasks**")
