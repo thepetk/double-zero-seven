@@ -11,7 +11,6 @@ import streamlit as st
 from pathlib import Path
 import yaml
 from crewai import Agent, Task, Crew, Process, LLM
-from crewai.project import CrewBase, crew
 from crewai.tools import BaseTool
 from crewai_tools import MCPServerAdapter
 
@@ -47,12 +46,10 @@ class ListHandler(logging.Handler):
             pass
 
 
-@CrewBase
 class ResearchCrew:
     """A simple research crew Services Crew"""
 
-    def __init__(self) -> "None":
-        super().__init__()
+    def __init__(self):
         with ConfigPath.AGENTS.open("r", encoding="utf-8") as f:
             self.agents_config: "dict[str, dict[str, str]]" = yaml.safe_load(f) or {}
         with ConfigPath.TASKS.open("r", encoding="utf-8") as f:
@@ -62,9 +59,6 @@ class ResearchCrew:
                 yaml.safe_load(f) or {}
             )
 
-        self._agents_dict: "dict[str, Agent]" = {}
-        self._tools_dict: "dict[str, BaseTool]" = {}
-
     def get_llm_client(
         self, base_url=LLM_BASE_URL, api_key=LLM_API_KEY, model=LLM_MODEL_NAME
     ) -> "LLM":
@@ -73,7 +67,15 @@ class ResearchCrew:
     def _build_tools(self, timeout=10) -> "dict[str, BaseTool]":
         server_params_list: "list[dict[str, str]]" = []
         self._tools_dict: "dict[str, BaseTool]" = {}
+        self._tool_sources: "dict[str, list[str]]" = {}
+
         for tc in self.tools_config["tools"]:
+
+            # skip tools without a name
+            if not tc.get("name"):
+                continue
+
+            tool_name = tc.get("name")
             transport = tc.get("transport")
             url = tc.get("url")
             params: "dict[str, str]" = {"url": url, "transport": transport}
@@ -86,13 +88,19 @@ class ResearchCrew:
                         "Authorization"
                     ] = f"Bearer {bearer}"
 
-            server_params_list.append(params)
+            server_params_list.append((tool_name, params))
+            self._tool_sources[tool_name] = []
 
         tools_by_name: "dict[str, BaseTool]" = {}
 
-        with MCPServerAdapter(server_params_list, connect_timeout=timeout) as mcp_tools:
-            for tool in mcp_tools:
-                tools_by_name[tool.name] = tool
+        if len(server_params_list) == 0:
+            return tools_by_name
+
+        for tool_name, params in server_params_list:
+            with MCPServerAdapter([params], connect_timeout=timeout) as mcp_tools:
+                for tool in mcp_tools:
+                    tools_by_name[tool.name] = tool
+                    self._tool_sources[tool_name].append(tool.name)
 
         return tools_by_name
 
@@ -143,7 +151,6 @@ class ResearchCrew:
             tasks.append(task)
         return tasks
 
-    @crew
     def crew(self) -> "Crew":
         """Creates the Research Crew"""
         agents = self._build_agents()
@@ -199,13 +206,26 @@ def main() -> "None":
         )
         st.toggle("Verbose logs", value=True, disabled=True)
 
+        st.markdown("### Available Tools")
+        if research_crew._tool_sources:
+            for source_name, tool_list in research_crew._tool_sources.items():
+                st.markdown(f"**{source_name}**")
+                for tool_name in tool_list:
+                    st.markdown(f"  - {tool_name}")
+        else:
+            st.info("No tools connected")
+
     st.markdown("#### Crew overview")
 
     a_col, t_col = st.columns(2)
     with a_col:
         st.markdown("**Agents**")
-        for agent in crew_obj.agents:
-            st.markdown(f"- **{agent.role}** — goal: _{agent.goal}_")
+        for agent_name, agent_config in research_crew.agents_config.items():
+            agent = next((a for a in crew_obj.agents if a.role == agent_config.get("role")), None)
+            if agent:
+                tool_sources = agent_config.get("tools", [])
+                tools_info = f" (tools: {', '.join(tool_sources)})" if tool_sources else ""
+                st.markdown(f"- **{agent.role}** — goal: _{agent.goal}_{tools_info}")
 
     with t_col:
         st.markdown("**Tasks**")
@@ -213,13 +233,12 @@ def main() -> "None":
             st.markdown(f"- **{getattr(task, 'description', '')[:50]}...**")
 
     st.markdown("#### Run the crew")
-    topic = st.text_input("Topic", value="CrewAI vs LangGraph")
     run_btn = st.button("🚀 Kick off")
 
     if run_btn:
         with st.spinner("Running crew..."):
             try:
-                result, logs = run_crew(crew_obj, inputs={"topic": topic})
+                result, logs = run_crew(crew_obj, inputs={})
                 st.subheader("Result")
                 st.write(result)
                 st.subheader("Logs")
