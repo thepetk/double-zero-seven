@@ -139,8 +139,7 @@ spec:
                 type: array
                 title: Agent Tools
                 description: "Select tools from the configured MCP tools."
-                items:
-                  type: string
+                uniqueItems: true
                 ui:field: SelectFieldFromApi
                 ui:options:
                   title: Select Tool
@@ -148,6 +147,8 @@ spec:
                   path: tools
                   arraySelector: name
                   valueSelector: name
+                items:
+                  type: string
               includeOtherLLM:
                 title: Uses different LLM?
                 type: boolean
