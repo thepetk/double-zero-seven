@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# Test template resources
+templates/crew-ai/content/config/
+templates/langgraph/content/config/
+config/agents.yaml
+
 # Distribution / packaging
 .Python
 build/
