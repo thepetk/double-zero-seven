@@ -221,10 +221,14 @@ def main() -> "None":
     with a_col:
         st.markdown("**Agents**")
         for agent_name, agent_config in research_crew.agents_config.items():
-            agent = next((a for a in crew_obj.agents if a.role == agent_config.get("role")), None)
+            agent = next(
+                (a for a in crew_obj.agents if a.role == agent_config.get("role")), None
+            )
             if agent:
                 tool_sources = agent_config.get("tools", [])
-                tools_info = f" (tools: {', '.join(tool_sources)})" if tool_sources else ""
+                tools_info = (
+                    f" (tools: {', '.join(tool_sources)})" if tool_sources else ""
+                )
                 st.markdown(f"- **{agent.role}** — goal: _{agent.goal}_{tools_info}")
 
     with t_col:
