@@ -8,4 +8,4 @@ An example project providing solutions for Red Hat Developer Hub Software Templa
 
 ## Contributing
 
-Contributions are welcome! You can open a PR to suggest a new feature or a fix.
+Contributions are welcome! You can open a [PR](https://github.com/thepetk/double-zero-seven/pulls) to suggest a new feature or a fix.
