@@ -4,7 +4,7 @@ An example project providing solutions for Red Hat Developer Hub Software Templa
 
 ## Background
 
-`double-zero-seven` is a collection of example **software templates** for Red Hat Developer Hub, based on **agentic AI** frameworks.
+`double-zero-seven` is a collection of **Agentic AI Software Templates** examples for Red Hat Developer Hub, based on frameworks like `crew-ai` or `langGraph`.
 
 ## Contributing
 
