@@ -6,4 +6,3 @@ metadata:
 spec:
   targets:
     - ./templates/crew-ai/template.yaml
-    - ./templates/langgraph/template.yaml
