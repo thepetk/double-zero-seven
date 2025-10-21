@@ -97,7 +97,7 @@ class ResearchCrew:
             return tools_by_name
 
         for tool_name, params in server_params_list:
-            with MCPServerAdapter([params], connect_timeout=timeout) as mcp_tools:
+            with MCPServerAdapter(params, connect_timeout=timeout) as mcp_tools:
                 for tool in mcp_tools:
                     tools_by_name[tool.name] = tool
                     self._tool_sources[tool_name].append(tool.name)
