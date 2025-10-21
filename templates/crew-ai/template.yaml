@@ -142,12 +142,6 @@ spec:
                 items:
                   type: string
                   title: Tool
-                  ui:field: SelectFieldFromApi
-                  ui:options:
-                    title: Select Tool
-                    description: Choose a tool from previously configured tools
-                    path: tools
-                    valueSelector: name
               includeOtherLLM:
                 title: Uses different LLM?
                 type: boolean
@@ -204,14 +198,6 @@ spec:
               agent:
                 type: string
                 title: Agent Name
-                ui:field: SelectFieldFromApi
-                ui:options:
-                  title: Select Agent
-                  description: Choose an agent from previously configured agents
-                  path: agents
-                  arraySelector: name
-                  valueSelector: name
-
     - title: Application Repository Information
       required:
         - hostType
