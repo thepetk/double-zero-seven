@@ -49,11 +49,13 @@ spec:
 
           {%- if values.tools and values.tools.length > 0 -%}
           {%- for t in values.tools %}
+          {%- if a.includeTransportSecret -%}
             - name: ${{ t.bearerTokenEnvVarName }}
               valueFrom:
                 secretKeyRef:
                   name: ${{ t.bearerTokenSecretName }}
                   key: ${{ t.bearerTokenSecretKey }}
+          {%- endif -%}
           {%- endfor -%}
           {%- endif -%}
 
