@@ -1,6 +1,6 @@
 tools:
-{% if values.tools and values.tools.length > 0 -%}
-{% for t in values.tools -%}
+{%- if values.tools and values.tools.length > 0 -%}
+{%- for t in values.tools -%}
   - name: "${{ t.name }}"
     url: "${{ t.url }}"
     transport: "${{ t.transport }}"

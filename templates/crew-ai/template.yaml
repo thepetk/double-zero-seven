@@ -310,7 +310,7 @@ spec:
           defaultBranch: ${{ parameters.branch }}
           agents: ${{ parameters.agents }}
           tasks: ${{ parameters.tasks }}
-          mcpServers: ${{ parameters.tools }}
+          tools: ${{ parameters.tools }}
     - id: fetch-github-action
       name: Fetch GitHub Action
       action: fetch:plain
