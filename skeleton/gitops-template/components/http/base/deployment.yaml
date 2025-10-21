@@ -26,6 +26,10 @@ spec:
         - image: ${{ values.appContainer }}
           resources: {}
           name: app-inference
+          securityContext:
+            runAsNonRoot: true
+          ports:
+            - containerPort: ${{ values.appPort }}
           envFrom:
             - configMapRef:
                 name: ${{ values.name }}-model-config
@@ -58,8 +62,3 @@ spec:
           {%- endif -%}
           {%- endfor -%}
           {%- endif -%}
-
-          ports:
-            - containerPort: ${{ values.appPort }}
-          securityContext:
-            runAsNonRoot: true
