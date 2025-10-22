@@ -68,6 +68,8 @@ class ResearchCrew:
         server_params_list: "list[dict[str, str]]" = []
         self._tools_dict: "dict[str, BaseTool]" = {}
         self._tool_sources: "dict[str, list[str]]" = {}
+        self._disconnected_tools: "dict[str, str]" = {}
+        self._mcp_adapters: "list[MCPServerAdapter]" = []
 
         for tc in self.tools_config["tools"]:
 
@@ -89,7 +91,6 @@ class ResearchCrew:
                     ] = f"Bearer {bearer}"
 
             server_params_list.append((tool_name, params))
-            self._tool_sources[tool_name] = []
 
         tools_by_name: "dict[str, BaseTool]" = {}
 
@@ -97,10 +98,18 @@ class ResearchCrew:
             return tools_by_name
 
         for tool_name, params in server_params_list:
-            with MCPServerAdapter(params, connect_timeout=timeout) as mcp_tools:
+            try:
+                mcp_adapter = MCPServerAdapter(params, connect_timeout=timeout)
+                mcp_tools = mcp_adapter.__enter__()
+                self._mcp_adapters.append(mcp_adapter)
+                self._tool_sources[tool_name] = []
                 for tool in mcp_tools:
                     tools_by_name[tool.name] = tool
                     self._tool_sources[tool_name].append(tool.name)
+            except Exception as e:
+                error_msg = f"Failed to connect: {str(e)}"
+                self._disconnected_tools[tool_name] = error_msg
+                logging.warning(f"Tool '{tool_name}' connection failed: {e}")
 
         return tools_by_name
 
@@ -115,11 +124,25 @@ class ResearchCrew:
 
         for name, cfg in self.agents_config.items():
             agent_tool_names = cfg.get("tools") or []
-            agent_tools = [
-                self._tools_dict[name]
-                for name in agent_tool_names
-                if name in self._tools_dict
-            ]
+            agent_tools = []
+
+            for tool_name in agent_tool_names:
+                if tool_name in self._disconnected_tools:
+                    logging.warning(
+                        f"Agent '{name}' cannot use disconnected tool '{tool_name}': "
+                        f"{self._disconnected_tools[tool_name]}"
+                    )
+                # check if it's an MCP server name (has multiple tools)
+                elif tool_name in self._tool_sources:
+                    for individual_tool_name in self._tool_sources[tool_name]:
+                        agent_tools.append(self._tools_dict[individual_tool_name])
+                elif tool_name in self._tools_dict:
+                    agent_tools.append(self._tools_dict[tool_name])
+                else:
+                    logging.warning(
+                        f"Agent '{name}' references unknown tool '{tool_name}'"
+                    )
+
             # check if custom llm is used
             llm = (
                 default_llm
@@ -161,6 +184,22 @@ class ResearchCrew:
             process=Process.sequential,
             verbose=True,
         )
+
+    def cleanup(self) -> "bool":
+        """
+        cleans up MCP adapter connections
+        """
+        if not hasattr(self, "_mcp_adapters"):
+            return True
+
+        for adapter in self._mcp_adapters:
+            try:
+                adapter.__exit__(None, None, None)
+            except Exception as e:
+                logging.warning(f"Error closing MCP adapter: {e}")
+                return False
+
+        return True
 
 
 def run_crew(crew: "Crew", inputs: "dict[str, str]") -> "tuple[str, list[str]]":
@@ -207,12 +246,20 @@ def main() -> "None":
         st.toggle("Verbose logs", value=True, disabled=True)
 
         st.markdown("### Available Tools")
+
         if research_crew._tool_sources:
             for source_name, tool_list in research_crew._tool_sources.items():
-                st.markdown(f"**{source_name}**")
+                st.markdown(f"**{source_name}** :white_check_mark:")
                 for tool_name in tool_list:
                     st.markdown(f"  - {tool_name}")
-        else:
+
+        if research_crew._disconnected_tools:
+            st.markdown("**Disconnected Tools** :x:")
+            for tool_name, error_msg in research_crew._disconnected_tools.items():
+                st.markdown(f"  - {tool_name}")
+                st.caption(f"    {error_msg}")
+
+        if not research_crew._tool_sources and not research_crew._disconnected_tools:
             st.info("No tools connected")
 
     st.markdown("#### Crew overview")
@@ -254,6 +301,8 @@ def main() -> "None":
                 st.success("Crew completed.")
             except Exception as e:
                 st.error(f"Run failed: {e}")
+            finally:
+                research_crew.cleanup()
 
 
 if __name__ == "__main__":
