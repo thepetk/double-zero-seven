@@ -39,26 +39,25 @@ spec:
                 secretKeyRef:
                   name: ${{ values.crewAILLMAPIKeySecretName }}
                   key: ${{ values.crewAILLMAPIKeySecretKey }}
-          {%- if values.agents and values.agents.length > 0 -%}
-          {%- for a in values.agents %}
-          {%- if a.includeOtherLLM -%}
+          {% if values.agents and values.agents.length > 0 %}
+          {% for a in values.agents %}
+          {% if a.includeOtherLLM %}
             - name: ${{ a.llmAPIKeyEnvVarName }}
               valueFrom:
                 secretKeyRef:
                   name: ${{ a.llmAPIKeySecretName }}
                   key: ${{ a.llmAPIKeySecretKey }}
-          {%- endif -%}
-          {%- endfor -%}
-          {%- endif -%}
-
-          {%- if values.tools and values.tools.length > 0 -%}
-          {%- for t in values.tools %}
-          {%- if t.includeTransportSecret -%}
+          {% endif %}
+          {% endfor %}
+          {% endif %}
+          {% if values.tools and values.tools.length > 0 %}
+          {% for t in values.tools %}
+          {% if t.includeTransportSecret %}
             - name: ${{ t.bearerTokenEnvVarName }}
               valueFrom:
                 secretKeyRef:
                   name: ${{ t.bearerTokenSecretName }}
                   key: ${{ t.bearerTokenSecretKey }}
-          {%- endif -%}
-          {%- endfor -%}
-          {%- endif -%}
+          {% endif %}
+          {% endfor %}
+          {% endif %}
